@@ -306,6 +306,59 @@ pub trait EvalContextExt<'mir, 'tcx: 'mir>: crate::MiriEvalContextExt<'mir, 'tcx
                 this.write_scalar(Scalar::from_i32(1), dest)?;
             }
 
+            "CreateSymbolicLinkW" => {
+                let &[_symlink_filename, _target_filename, _flags] = check_arg_count(args)?;
+                // TODO: implement
+                this.check_no_isolation("`GetFinalPathNameByHandleW`")?;
+                this.write_scalar(Scalar::from_i32(0), dest)?;
+            }
+
+            "GetFinalPathNameByHandleW" => {
+                let &[_file_handle, _file_path, _file_path_len, _flags] = check_arg_count(args)?;
+                this.check_no_isolation("`GetFinalPathNameByHandleW`")?;
+                this.write_scalar(Scalar::from_u32(0), dest)?;
+            }
+
+            "SetThreadStackGuarantee" => {
+                let &[_stack_size_ptr] = check_arg_count(args)?;
+                // We ignore the stack size parameter, and leave it unchanged.
+                this.write_scalar(Scalar::from_i32(1), dest)?;
+            }
+
+            "SetFileInformationByHandle" => {
+                let &[_file_handle, _file_information_class, _file_information, _buffer_size] = check_arg_count(args)?;
+                this.check_no_isolation("`SetFileInformationByHandle`")?;
+                // TODO: implement
+                this.write_scalar(Scalar::from_i32(0), dest)?;
+            }
+
+            "SleepConditionVariableSRW" => {
+                let &[_condvar, _srw_lock, _millis, _flags] = check_arg_count(args)?;
+                // There is only one thread, so this always succeeds and returns TRUE.
+                this.write_scalar(Scalar::from_i32(1), dest)?;
+            }
+
+            "WakeConditionVariable" => {
+                let &[_condvar] = check_arg_count(args)?;
+                // There is only one thread, so this has no effect.
+            }
+
+            "WakeAllConditionVariable" => {
+                let &[_condvar] = check_arg_count(args)?;
+                // There is only one thread, so this has no effect.
+            }
+
+            "AcquireSRWLockExclusive" | "AcquireSRWLockShared" | "ReleaseSRWLockExclusive" | "ReleaseSRWLockShared" => {
+                let &[_srwlock] = check_arg_count(args)?;
+                // There is only one thread, so this has no effect.
+            }
+
+            "TryAcquireSRWLockExclusive" | "TryAcquireSRWLockShared" => {
+                let &[_srwlock] = check_arg_count(args)?;
+                // There is only one thread, so this always succeeds.
+                this.write_scalar(Scalar::from_u8(1), dest)?;
+            }
+
             _ => throw_unsup_format!("can't call foreign function: {}", link_name),
         }
 
